@@ -62,11 +62,21 @@ There were three major points discussed at this meeting which were:
 * TOTAL SUCCESSFUL BOOKINGS _(Calculated Total Successful Bookings)_: `SUM([Successful bookings])`
 * TOTAL PERCENTAGE OCCUPANCY _(Calculated % Occupancy)_: `[Calculated Total Successful Bookings]/[Calaculated Total Capacity]`
 * AVERAGE RATING _(Calculated Average Rating): `AVG([Ratings Given])`
-* NO OF DAYS _(Calculated No of Days)_: `DATEDIFF('day', Min(Date),Max(Date)) + 1`
+* NO OF DAYS _(Calculated Total No of Days)_: `DATEDIFF('day', Min(Date),Max(Date)) + 1`
 
 **_NB_** I added one because Tableau usually do not add the end date and its necessary in this situation.
 * TOTAL CANCELLED BOOKINGS _(Calculated Total Cancelled Bookings)_: `COUNT(IF [Booking Status] = 'Cancelled' Then ['Booking Status] END)`
 * TOTAL PERCENTAGE CANCELLED BOOKINGS _(Calculated Total % cancelled Bookings)_: `[Calculated Total Cancelled Bookings]/[Calculated Total Bookings]`
 * TOTAL CHECK-OUT _(Calculated Total Check-out)_: `COUNT(IF [Booking Status] = 'Checked Out' Then [Booking Status]) END`
+* TOTAL NO SHOW BOOKINGS _(Calculated No Show Bookings)_: `COUNT(if [Booking Status] = 'No Show' Then [Booking Status] END)`
+* TOTAL % NO SHOW RATE _(Calculated Total % No Show Rate)_: `[Calculated Total No show ]/[Calculated total Bookings]`
+* TOTAL BOOKING PERCENTAGE PER PLATFORM _(Calculated Fixed booking % per Platform)_: `{FIXED [Booking Platform]: COUNT([Booking Id])}/ {FIXED :[Calculated Total Bookings]}`
+* BOOKING PERCENTAGE PER ROOM CLASS _(Calculated Fixed Booking % by Room Class)_: `{FIXED [Room Category]:COUNT([Booking Id])}/{FIXED : [Calculated Total Bookings]}`
+* AVERAGE DAILY RATE (ADR) _(Calculated Average Daily Rate)_: `SUM([Revenue Generated])/[Calculated Total Bookings]`
+* REALIZATION _(Calculated Total Realization (Rate))_: `1- ([Calculated Total % Cacelled Bookings ]+[Calculated Total % No Show Rate])`
+* REVENUE PER ROOM (RevPAR) _(Calculated Revenue Per Room (RevPAR))_: `SUM([Revenue Generated])/[Calculated Total Capacity]`
+* DAILY BOOKING RATE NIGHT (DBRN) _(Calculated Daily Booking Night Rate (DBRN))_: `[Calculated Total Bookings]/[Calculated Total No of Days]`
+* DAILY SELLABLE ROOM NIGHT (DSRN) _(Calculated Daily Sellable Room (DSRN))_: `[Calculated Total Capacity]/[Calculated Total No of Days]`
+* DAILY USABLE ROOM NIGHT (DURN) _(Calculated Daily Usable Room Night (DURN))_: `[Calculated Total Check-out]/[Calculated Total No of Days]`
 
     

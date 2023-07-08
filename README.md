@@ -49,4 +49,24 @@ There were three major points discussed at this meeting which were:
 
 **_NB:_** The Manager made us under stand that weekdays in the hospitality industry start from sunday and ends on thursday. while fridays and saturdays are considered as weekend, unlike the conventional believe.
 
+
+## CALCULATION OF MATRICES AND THEIR FORMULAS IN TABLEAU
+
+* WEEKS COLUMN _(Calculated week no)_: `DATEPART('week',[Date])`
+* WEEKDAY AND WEEKEND COLUMN _(Calculated Week no)_: `if DATEPART('weekday',[Date])>5 then 'Weekend' Else 'Weekday' END`
+
+**_NB:_** Remember that the Managing Director said that weekends are Fridays and Saturdays while the week starts on Sunday. in other words, Sundays to Thursdays are considered Weekdays in the Hospitality industry. since Tableau starts Numbering days from sunday and The Manager has already established that Sunday is a weekday, that is why the formula says any day greater than 5 should be weekend.
+
+* TOTAL BOOKINGS _(Calculated Total Bookings)_: `COUNTD([Booking ID])`
+* TOTAL CAPACITY _(Calculated Total Capacity)_: `SUM([Capacity])`
+* TOTAL SUCCESSFUL BOOKINGS _(Calculated Total Successful Bookings)_: `SUM([Successful bookings])`
+* TOTAL PERCENTAGE OCCUPANCY _(Calculated % Occupancy)_: `[Calculated Total Successful Bookings]/[Calaculated Total Capacity]`
+* AVERAGE RATING _(Calculated Average Rating): `AVG([Ratings Given])`
+* NO OF DAYS _(Calculated No of Days)_: `DATEDIFF('day', Min(Date),Max(Date)) + 1`
+
+**_NB_** I added one because Tableau usually do not add the end date and its necessary in this situation.
+* TOTAL CANCELLED BOOKINGS _(Calculated Total Cancelled Bookings)_: `COUNT(IF [Booking Status] = 'Cancelled' Then ['Booking Status] END)`
+* TOTAL PERCENTAGE CANCELLED BOOKINGS _(Calculated Total % cancelled Bookings)_: `[Calculated Total Cancelled Bookings]/[Calculated Total Bookings]`
+* TOTAL CHECK-OUT _(Calculated Total Check-out)_: `COUNT(IF [Booking Status] = 'Checked Out' Then [Booking Status]) END`
+
     

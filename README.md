@@ -49,6 +49,227 @@ There were three major points discussed at this meeting which were:
 
 **_NB:_** The Manager made us under stand that weekdays in the hospitality industry start from sunday and ends on thursday. while fridays and saturdays are considered as weekend, unlike the conventional believe.
 
+## THE TASK WITH SQL 
+
+### VIEWING DATE TABLE
+
+`Select * from dim_date`
+
+![Alt Text]()
+
+### VIEWING THE HOTEL TABLE
+
+`select * from dim_hotels`
+
+![Alt Text]()
+
+### VIEWING THE ROOMS TABLE
+
+`select * from dim_rooms;`
+
+![Alt Text]()
+
+### VIEWING AGGREGATED BOOKINGS TABLE
+
+`select * from fact_aggregated_bookings;`
+
+![Alt Text]()
+
+### VIEWING THE ACTUAL BOOKINGS TABLE
+
+`select * from fact_bookings;`
+
+![Alt Text]()
+
+### TOTAL BOOKINGS
+
+`select count(booking_id) as Total_booking`
+`from fact_bookings`
+
+![Alt Text]()
+
+### TOTAL CAPACITY
+
+`select sum(capacity) as Total_Capacity`  
+`from fact_aggregated_bookings;`
+
+![Alt Text]()
+
+### TOTAL SUCCESSFUL BOOKINGS
+
+`select sum(successful_bookings) as Total_Successful_Bookings`
+`from fact_aggregated_bookings;`
+
+![Alt Text]()
+
+### TOTAL OCCUPANCY (IN PERCENTAGE)
+
+`select concat(round((sum(successful_bookings)/sum(capacity))*100,2),' %')`
+`as Total_Percentage_Occupancy`
+`from fact_aggregated_bookings;`
+
+![Alt Text]()
+
+### AVERAGE RATING
+
+`select round(AVG(ratings_given),2)`
+`as Total_Average_Rating`
+`from fact_bookings;`
+
+![Alt Text]()
+
+### NO OF DAYS
+
+`select DATEDIFF(day, Min(date), Max(date)) + 1` 
+`as Total_No_of_Days`
+`from dim_date;`
+
+![Alt Text]()
+
+**_NB:_** I had to add 1 to the date difference function because the **DATEDIFF** function do not add the last day.
+
+### TOTAL CANCELLED BOOKINGS
+
+`select count([booking_status])`
+`as total_cancelled_Bookings`
+`from fact_bookings`
+`where booking_status = 'Cancelled';`
+
+![Alt Text]()
+
+### PERCENTAGE OF CANCELLED BOOKINGS
+
+`with agg_booking_status as (select booking_status, cast(count(booking_status)as float)` 
+`as agg_status from fact_bookings`
+`group by booking_status)`
+
+`select booking_status, concat(round((agg_status * 100) /`
+`(select count(booking_status) from fact_bookings),2),' %')`
+`as Percentage_Cancelled`
+`from agg_booking_status`
+`where booking_status = 'Cancelled';`
+
+![Alt Text]()
+
+### TOTAL CHECK-OUT
+
+`select count([booking_status])` 
+`as total_Checked_Out_Bookings` 
+`from fact_bookings`
+`where booking_status = 'Checked Out';`
+
+![Alt Text]()
+
+### TOTAL NO SHOW
+
+`select count([booking_status])` 
+`as total_No_Show_Bookings` 
+`from fact_bookings`
+`where booking_status = 'No Show';`
+
+![Alt Text]()
+
+### PERCENTAGE OF NO SHOW
+
+`with agg_booking_status as (select booking_status, cast(count(booking_status)as float)`
+`as agg_status from fact_bookings`
+`group by booking_status)`
+
+`select booking_status, concat(round((agg_status * 100) /`
+`(select count(booking_status) from fact_bookings),2),' %')`
+`as Percentage_No_Show`
+`from agg_booking_status`
+`where booking_status = 'No Show';`
+
+![Alt Text]()
+
+### PERCENTAGE BOOKINGS PER PLATFORM
+
+`with agg_booking_per_Platform as`
+`(select booking_platform, cast(count(booking_id) as float)` 
+`as booking_Per_platform` 
+`from fact_bookings`
+`group by booking_platform)`
+
+`select booking_platform, concat(Round((booking_per_platform * 100)/`
+`(select count(booking_id) from fact_bookings),2),' %')` 
+`as Percentage_per_Platform`
+`from agg_booking_per_Platform;`
+
+### PERCENTAGE BOOKINGGS PER ROOM CLASS
+
+`with agg_room_count as (select room_category, room_class,`
+`cast(count(booking_id) as float)`
+`as room_count`
+`from fact_bookings`
+`join dim_rooms on room_id = room_category`
+`group by room_category, room_class)`
+
+`select room_category,room_class, concat(round(room_count * 100/`
+`(select count(booking_id) as tot_bookings from fact_bookings),2),' %')`
+`as room_booking_ratio`
+`from agg_room_count;`
+
+![Alt Text]()
+
+### AVERAGE DAILY RATE
+
+`select round(sum(revenue_generated)/count(booking_id),2)` 
+`as Average_Daily_Rate from fact_bookings;`
+
+![Alt Text]()
+
+### REALIZATION
+
+`with agg_booking_status as (select booking_status, cast(count(booking_status)as float)` 
+`as agg_status from fact_bookings`
+`group by booking_status)`
+
+`select booking_status, concat(round((agg_status * 100) /`
+`(select count(booking_status) from fact_bookings),2),' %')`
+`as Percentage_Checked_Out_or_Realization`
+`from agg_booking_status`
+`where booking_status = 'Checked Out';`
+
+![Alt Text]()
+
+### REVENUE PER ROOM 
+
+`select round(sum(a.revenue_generated)/sum(agg.capacity),2) as RevPAR`
+`from fact_bookings as a join fact_aggregated_bookings as agg on`
+`a.property_id = agg.property_id;`
+
+![Alt Text]()
+
+### DAILY BOOKING RATE NIGHT 
+
+`select Round(cast(count(booking_id) as float)/`
+`(select DATEDIFF(day, Min(date), Max(date)) + 1`
+`as Total_No_of_Days`
+`from dim_date),2) as DBRN from fact_bookings;`
+
+![Alt Text]()
+
+### DAILY SELLABLE RATE NIGHT
+
+`select round(sum(Capacity)/(select DATEDIFF(day, Min(date), Max(date)) + 1`
+`as Total_No_of_Days`
+`from dim_date),2) as DSRN from fact_aggregated_bookings;`
+
+![Alt Text]()
+
+### DAILY USEABLE ROOM NIGHT
+
+`select distinct (select count([booking_status])`
+`as total_Checked_Out_Bookings`
+`from fact_bookings`
+`where booking_status = 'Checked Out')/(select DATEDIFF(day, Min(date), Max(date)) + 1`
+`as Total_No_of_Days`
+`from dim_date) as DURN from fact_bookings;`
+
+![Alt Text]()
+   
+
 
 ## CALCULATION OF MATRICES AND THEIR FORMULAS IN TABLEAU
 
@@ -78,5 +299,7 @@ There were three major points discussed at this meeting which were:
 * DAILY BOOKING RATE NIGHT (DBRN) _(Calculated Daily Booking Night Rate (DBRN))_: `[Calculated Total Bookings]/[Calculated Total No of Days]`
 * DAILY SELLABLE ROOM NIGHT (DSRN) _(Calculated Daily Sellable Room (DSRN))_: `[Calculated Total Capacity]/[Calculated Total No of Days]`
 * DAILY USABLE ROOM NIGHT (DURN) _(Calculated Daily Usable Room Night (DURN))_: `[Calculated Total Check-out]/[Calculated Total No of Days]`
-
+* WEEK OVER WEEK PERCENTAGE DIFFERECE _(Calculated week over week Revenue)_: `(SUM([Revenue Generated])-LOOKUP(SUM([Revenue Generated]),-1))/ABS(LOOKUP(SUM([Revenue Generated]),-1))`
+* WOW PERCENTAGE OCCUPANCY -(Calculated WoW change in % occupancy)_:
+* 
     

@@ -258,7 +258,7 @@ There were three major points discussed at this meeting which were:
 
 ![Alt Text]()
 
-### DAILY USEABLE ROOM NIGHT
+### DAILY USEABLE ROOM NIGHT (DURN)
 
 `select distinct (select count([booking_status])`
 `as total_Checked_Out_Bookings`
@@ -268,7 +268,109 @@ There were three major points discussed at this meeting which were:
 `from dim_date) as DURN from fact_bookings;`
 
 ![Alt Text]()
-   
+
+### WEEK OVER WEEK PERCENTAGE REVENUE CHANGE
+
+`with agg_week_Revenue as (select week_no, sum(revenue_generated)` 
+`as Total_revenue_per_week from dim_date`
+`join fact_bookings on checkout_date = date`
+`group by week_no)`
+
+`select week_no, concat(Round((Total_revenue_per_week-lag(Total_revenue_per_week)`
+`over(order by (select null))/lag(Total_revenue_per_week)`
+`over(order by (select null))*100),2),' %') as WoW_Revenue_Change from agg_week_Revenue;`
+
+![Alt Text]()
+
+### WEEK OVER WEEK OCCUPANCY PERCENTAGE CHANGE
+
+`with weekly_occupancy as (select DATEPART(WEEK,check_in_date) as week_no,`
+`sum(successful_bookings)/ sum(capacity) as WoW_Occupancy_Change,`
+`ROW_NUMBER() over(order by DATEPART(WEEK,check_in_date)) as row_num`
+`from fact_aggregated_bookings`
+`group by DATEPART(WEEK,check_in_date))`
+
+`select week_no, concat(round((wow_Occupancy_Change-lag(WoW_Occupancy_Change)`
+`Over(order by week_no)) * 100/lag(WoW_Occupancy_Change)`
+`Over(order by week_no),2),' %') as WoW_change_of_Occupany from` `weekly_occupancy;`
+
+![Alt Text]()
+
+### WEEK OVER WEEK ADR CHANGE
+
+`with agg_ADR as (select DATEPART(WEEK,check_in_date) as week_no,`
+`sum(Revenue_generated)/Count(booking_id) as Total_ADR from fact_bookings`
+`group by DATEPART(WEEK,check_in_date))`
+
+`select week_no, concat(round(((Total_ADR-lag(Total_ADR) over(order by week_no))*100/`
+`lag(Total_ADR) over(order by week_no)),7),' %') as WoW_ADR from agg_ADR;`
+
+![Alt Text]()
+
+### WEEK OVER WEEK REVENUE PER DAY (RevPAR)
+
+`with Total_RevPARS as(select DATEPART(WEEK,a.check_in_date) as week_no,`
+`sum(a.revenue_generated) /SUM(b.capacity) as Total_RevPAR,`
+`Row_number() over(order by DATEPART(WEEK,a.check_in_date)) as Row_num`
+`from fact_bookings as a` 
+`join fact_aggregated_bookings as b on a.check_in_date = b.check_in_date`
+`group by DATEPART(WEEK,a.check_in_date)),`
+
+`self_joined_table as (select a.week_no as Aweek_no, a.Row_num as ARow_no,`
+`a.Total_RevPAR as ATotal_RevPAR, b.week_no as Bweek_no, b.Row_num as BRownum,`
+`b.Total_RevPAR as BTotal_RevPAR`
+`from Total_RevPARS as a join Total_RevPARS as b`
+`on a.week_no = b.week_no and b.Row_num = a.row_num),`
+
+`Current_and_Previous as (select Aweek_no, ATotal_RevPAR,` 
+`lag(BTotal_RevPAR) over(order by (select null)) as Previous`
+`from self_joined_table)`
+
+`select Aweek_no, concat(round((((ATotal_RevPAR-Previous) *100)/`
+`Previous),2),' %') WOW_Revenue_Per_Available_Room from Current_and_Previous;`
+
+![Alt Text]()
+
+### WEEK OVER WEEK REALIZATION
+
+`with Total_Checkout_table as (select DATEPART(WEEK,check_in_date) as week_no,` 
+`count(booking_id) as Total_Checkout from fact_bookings`
+`where booking_status = 'Checked Out'`
+`group by DATEPART(WEEK,check_in_date)),`
+
+`week_realizations as (select a.week_no, a.Total_Checkout, count(b.booking_id)` 
+`as Total_Booking,`
+`cast (a.Total_Checkout as float)/count(b.booking_id) as week_Realization`
+`from Total_Checkout_table  as a`
+`join fact_bookings as b`
+`on DATEPART(WEEK,check_in_date) = week_no` 
+`group by a.week_no,a.Total_Checkout)`
+
+`select week_no, concat(round(((((week_Realization)-lag(week_Realization) over(order by week_no))`
+`/(lag(week_Realization) over(order by week_no))) * 100),2),' %') as WoW_Realization`
+`from week_realizations;`
+
+![Alt Text]()
+
+### WEEK OVER WEEK DAILY SELLABLE ROOM NIGHT
+
+`with agg_capacity as (select DATEPART(WEEK,check_in_date) as week_no,`
+`sum(capacity) as Total_Capacity,`
+`(select DATEDIFF(day, Min(check_in_date), Max(check_in_date))`
+`+ 1 from fact_aggregated_bookings)`
+`as Total_Days`
+`from fact_aggregated_bookings`
+`group by DATEPART(WEEK,check_in_date)),`
+
+`DSRNs as (select week_no, cast(Total_Capacity as float)/Total_Days as DSRN`
+`from agg_capacity)`
+
+`select week_no, concat(round((DSRN-LAG(DSRN) over(order by week_no))/`
+`LAG(DSRN) over(order by week_no),2),' %')`
+`as WoW_DSRN from DSRNs;`
+
+
+![Alt Text]()
 
 
 ## CALCULATION OF MATRICES AND THEIR FORMULAS IN TABLEAU

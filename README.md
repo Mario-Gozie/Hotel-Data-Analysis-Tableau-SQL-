@@ -214,12 +214,16 @@ There were three major points discussed at this meeting which were:
 
 ### AVERAGE DAILY RATE
 
-`select round(sum(revenue_generated)/count(booking_id),2)` 
+* Revenue/Bookings
+
+`select round(sum(revenue_realized)/count(booking_id),2)` 
 `as Average_Daily_Rate from fact_bookings;`
 
 ![Alt Text]()
 
 ### REALIZATION
+
+* Propotion of checkouts = 1 - (Propotion of No Show + Propotion of Cancellation)
 
 `with agg_booking_status as (select booking_status, cast(count(booking_status)as float)` 
 `as agg_status from fact_bookings`
@@ -235,13 +239,16 @@ There were three major points discussed at this meeting which were:
 
 ### REVENUE PER ROOM 
 
-`select round(sum(a.revenue_generated)/sum(agg.capacity),2) as RevPAR`
-`from fact_bookings as a join fact_aggregated_bookings as agg on`
-`a.property_id = agg.property_id;`
+* Revenue/Capacity
+
+`select round(sum(revenue_realized)/(select sum(capacity)`
+`from fact_aggregated_bookings),2) as RevPAR from fact_bookings`
 
 ![Alt Text]()
 
 ### DAILY BOOKING RATE NIGHT 
+
+* Bookings/Number of Days
 
 `select Round(cast(count(booking_id) as float)/`
 `(select DATEDIFF(day, Min(date), Max(date)) + 1`
@@ -252,6 +259,8 @@ There were three major points discussed at this meeting which were:
 
 ### DAILY SELLABLE RATE NIGHT
 
+* Capacity/Number of Days
+
 `select round(sum(Capacity)/(select DATEDIFF(day, Min(date), Max(date)) + 1`
 `as Total_No_of_Days`
 `from dim_date),2) as DSRN from fact_aggregated_bookings;`
@@ -259,6 +268,8 @@ There were three major points discussed at this meeting which were:
 ![Alt Text]()
 
 ### DAILY USEABLE ROOM NIGHT (DURN)
+
+* Number of Check Outs/Number of Days
 
 `select distinct (select count([booking_status])`
 `as total_Checked_Out_Bookings`
@@ -271,20 +282,24 @@ There were three major points discussed at this meeting which were:
 
 ### WEEK OVER WEEK PERCENTAGE REVENUE CHANGE
 
-`with agg_week_Revenue as (select week_no, sum(revenue_generated)` 
-`as Total_revenue_per_week from dim_date`
-`join fact_bookings on checkout_date = date`
-`group by week_no)`
+`with week_over_week_cte as (select DATEPART(WEEK,check_in_date) as week_no,` 
+`sum(Revenue_realized) as revenue, ROW_NUMBER() over(order by DATEPART(WEEK,check_in_date))` 
+`as row_num from fact_bookings`
+`group by DATEPART(WEEK,check_in_date))`
 
-`select week_no, concat(Round((Total_revenue_per_week-lag(Total_revenue_per_week)`
-`over(order by (select null))/lag(Total_revenue_per_week)`
-`over(order by (select null))*100),2),' %') as WoW_Revenue_Change from agg_week_Revenue;`
+`select current_week.week_no, current_week.revenue, previous_week.revenue`
+`as previous_week_revenue, concat(round((((current_week.revenue - previous_week.revenue)/`
+`previous_week.revenue)*100),2),' %') as week_over_week_Revenue`
+`from week_over_week_cte as current_week join`
+`week_over_week_cte as previous_week on previous_week.row_num = current_week.row_num - 1;`
 
 ![Alt Text]()
 
 ### WEEK OVER WEEK OCCUPANCY PERCENTAGE CHANGE
 
-`with weekly_occupancy as (select DATEPART(WEEK,check_in_date) as week_no,`
+* successful bookings/capacity
+
+`with weekly_occupancy as (select DATEPART(WEEK,check_in_date) as week_no,` 
 `sum(successful_bookings)/ sum(capacity) as WoW_Occupancy_Change,`
 `ROW_NUMBER() over(order by DATEPART(WEEK,check_in_date)) as row_num`
 `from fact_aggregated_bookings`
@@ -292,27 +307,65 @@ There were three major points discussed at this meeting which were:
 
 `select week_no, concat(round((wow_Occupancy_Change-lag(WoW_Occupancy_Change)`
 `Over(order by week_no)) * 100/lag(WoW_Occupancy_Change)`
-`Over(order by week_no),2),' %') as WoW_change_of_Occupany from` `weekly_occupancy;`
+`Over(order by week_no),2),' %') as WoW_change_of_Occupany from weekly_occupancy;`
+
+![Alt Text]()
+
+* Alternatively
+
+`with Total_weekly_occupancy as (select DATEPART(WEEK,check_in_date) as week_no,`
+`sum(successful_bookings)/ sum(capacity) as Weekly_Occupancy,`
+`ROW_NUMBER() over(order by DATEPART(WEEK,check_in_date)) as row_num`
+`from fact_aggregated_bookings`
+`group by DATEPART(WEEK,check_in_date))`
+
+`select current_week.week_no, current_week.weekly_Occupancy,`
+`previous_week.weekly_Occupancy,`
+`concat(round((current_week.Weekly_Occupancy - previous_week.Weekly_Occupancy)*100/`
+`(previous_week.Weekly_Occupancy),2),' %') as Week_over_week_Occupancy`
+`from Total_weekly_occupancy as current_week`
+`join Total_weekly_occupancy as previous_week` 
+`on current_week.row_num = previous_week.row_num + 1;`
 
 ![Alt Text]()
 
 ### WEEK OVER WEEK ADR CHANGE
 
+* Revenue/Bookings
+
 `with agg_ADR as (select DATEPART(WEEK,check_in_date) as week_no,`
-`sum(Revenue_generated)/Count(booking_id) as Total_ADR from fact_bookings`
+`sum(Revenue_realized)/Count(booking_id) as Total_ADR from fact_bookings`
 `group by DATEPART(WEEK,check_in_date))`
 
 `select week_no, concat(round(((Total_ADR-lag(Total_ADR) over(order by week_no))*100/`
-`lag(Total_ADR) over(order by week_no)),7),' %') as WoW_ADR from agg_ADR;`
+`lag(Total_ADR) over(order by week_no)),2),' %') as WoW_ADR from agg_ADR;`
+
+![Alt Text]()
+
+* Alternatively
+
+`with agg_ADR as (select DATEPART(WEEK,check_in_date) as week_no,`
+`sum(Revenue_realized)/Count(booking_id) as Total_ADR,`
+`ROW_NUMBER() over(order by DATEPART(WEEK,check_in_date)) as rownum`
+`from fact_bookings`
+`group by DATEPART(WEEK,check_in_date))`
+
+`select current_week.week_no, current_week.Total_ADR, Previous_week.Total_ADR`
+`as Previous_week_ADR, concat(round((((current_week.Total_ADR - previous_week.Total_ADR)/`
+`previous_week.Total_ADR) *100),2),' %') as Week_over_week_occupancy`
+`from agg_ADR as current_week`
+`join agg_ADR as previous_week on current_week.rownum = previous_week.rownum + 1;`
 
 ![Alt Text]()
 
 ### WEEK OVER WEEK REVENUE PER DAY (RevPAR)
 
+* Revenue/Capacity
+
 `with Total_RevPARS as(select DATEPART(WEEK,a.check_in_date) as week_no,`
-`sum(a.revenue_generated) /SUM(b.capacity) as Total_RevPAR,`
+`sum(a.revenue_realized) /SUM(b.capacity) as Total_RevPAR,`
 `Row_number() over(order by DATEPART(WEEK,a.check_in_date)) as Row_num`
-`from fact_bookings as a` 
+`from fact_bookings as a`
 `join fact_aggregated_bookings as b on a.check_in_date = b.check_in_date`
 `group by DATEPART(WEEK,a.check_in_date)),`
 
@@ -322,7 +375,7 @@ There were three major points discussed at this meeting which were:
 `from Total_RevPARS as a join Total_RevPARS as b`
 `on a.week_no = b.week_no and b.Row_num = a.row_num),`
 
-`Current_and_Previous as (select Aweek_no, ATotal_RevPAR,` 
+`Current_and_Previous as (select Aweek_no, ATotal_RevPAR,`
 `lag(BTotal_RevPAR) over(order by (select null)) as Previous`
 `from self_joined_table)`
 
@@ -331,47 +384,92 @@ There were three major points discussed at this meeting which were:
 
 ![Alt Text]()
 
+* Alternatively
+
+`with Total_capacity_revenue as (select  DATEPART(WEEK,a.check_in_date) as week_no,`
+`sum(b.revenue_realized) as Total_revenue,`  
+`sum(capacity) as Total_Capacity` 
+`from fact_aggregated_bookings as a` 
+`join fact_bookings as b on DATEPART(WEEK,a.check_in_date)=`
+`DATEPART(WEEK,b.check_in_date)`
+`group by DATEPART(WEEK,a.check_in_date)),`
+
+`Total_RevPAR as (select week_no, Total_revenue/Total_Capacity`
+`as RevPAR, ROW_NUMBER() over(order by week_no) as Row_num`
+`from Total_capacity_revenue)`
+
+`select current_week.week_no, current_week.RevPAR, Previous_week.RevPAR,`
+`concat(round((((current_week.RevPAR - Previous_week.RevPAR)*100)/`
+`Previous_week.RevPAR),2),' %') as Week_over_week_RevPAR`
+`from Total_RevPAR as current_week`
+`join Total_RevPAR as Previous_week` 
+`on current_week.Row_num = Previous_week.Row_num + 1;`
+
+![Alt Text]()
+
 ### WEEK OVER WEEK REALIZATION
 
-`with Total_Checkout_table as (select DATEPART(WEEK,check_in_date) as week_no,` 
-`count(booking_id) as Total_Checkout from fact_bookings`
+* Propotion of checkouts. This is also equal to 1 - (propotion of no show + Propotion of cancellation)
+
+`with Total_Checkout_table as (select DATEPART(WEEK,check_in_date) as week_no,`
+`cast(count(booking_id) as float) as Total_Checkout,`
+`(select count(booking_id) from fact_bookings) as Total_bookings`
+`from fact_bookings`
 `where booking_status = 'Checked Out'`
 `group by DATEPART(WEEK,check_in_date)),`
 
-`week_realizations as (select a.week_no, a.Total_Checkout, count(b.booking_id)` 
-`as Total_Booking,`
-`cast (a.Total_Checkout as float)/count(b.booking_id) as week_Realization`
-`from Total_Checkout_table  as a`
-`join fact_bookings as b`
-`on DATEPART(WEEK,check_in_date) = week_no` 
-`group by a.week_no,a.Total_Checkout)`
+`Total_weekly_realization as (select week_no, Total_Checkout/Total_bookings`
+`as weekly_realization,`
+`ROW_NUMBER() over(order by week_no) as row_num`
+`from Total_Checkout_table)`
 
-`select week_no, concat(round(((((week_Realization)-lag(week_Realization) over(order by week_no))`
-`/(lag(week_Realization) over(order by week_no))) * 100),2),' %') as WoW_Realization`
-`from week_realizations;`
+`select current_week.week_no, current_week.weekly_realization,`
+`previous_week.weekly_realization as Previous_week_realization,`
+`(current_week.weekly_realization- previous_week.weekly_realization) *100/`
+`previous_week.weekly_realization as week_over_week_Realization`
+`from Total_weekly_realization as current_week join`
+`Total_weekly_realization as previous_week`
+`on current_week.row_num = previous_week.row_num + 1;`
 
 ![Alt Text]()
 
 ### WEEK OVER WEEK DAILY SELLABLE ROOM NIGHT
 
-`with agg_capacity as (select DATEPART(WEEK,check_in_date) as week_no,`
-`sum(capacity) as Total_Capacity,`
-`(select DATEDIFF(day, Min(check_in_date), Max(check_in_date))`
-`+ 1 from fact_aggregated_bookings)`
-`as Total_Days`
-`from fact_aggregated_bookings`
+* Capacity/Number of Days
+
+`with weekly_capacity as (select DATEPART(WEEK,check_in_date) as week_no,` 
+`sum(capacity) as Total_Capacity from fact_aggregated_bookings`
 `group by DATEPART(WEEK,check_in_date)),`
 
-`DSRNs as (select week_no, cast(Total_Capacity as float)/Total_Days as DSRN`
-`from agg_capacity)`
+`days_and_capacity as (select caps.week_no, Total_capacity,` 
+`dayss.Actual_week_days from weekly_capacity`
+`as caps join (select DATEPART(WEEK,check_in_date) as week_no ,`
+`DATEDIFF(day, Min(check_in_date), Max(check_in_date))`
+`+ 1 as actual_week_days from fact_aggregated_bookings` 
+`group by DATEPART(WEEK,check_in_date)) as dayss` 
+`on dayss.week_no = caps.week_no),`
 
-`select week_no, concat(round((DSRN-LAG(DSRN) over(order by week_no))/`
-`LAG(DSRN) over(order by week_no),2),' %')`
-`as WoW_DSRN from DSRNs;`
+`Total_DSRN as (select week_no, Total_capacity/Actual_week_days` 
+`as DSRN_weekly, ROW_NUMBER()`
+`over(order by week_no) as Row_num from days_and_capacity)`
 
+`select current_week.week_no, current_week.DSRN_weekly, Previous_week.DSRN_weekly,`
+`concat(round(((current_week.DSRN_weekly - Previous_week.DSRN_weekly) * 100/`
+`previous_week.DSRN_weekly),2),' %') as week_over_week_DSRN`
+`from Total_DSRN as current_week join`
+`Total_DSRN as previous_week on previous_week.Row_num = current_week.Row_num-1;`
 
 ![Alt Text]()
 
+### THE TASK WITH TABLEU
+
+To carry out this task with tableau, there is need to need to link the five (5) tables for this task together. There are three was to create a link between tables in tableau which are 
+
+* Relationship: Relationship is a the fairest way of linking tables in tableau.
+* Blending: blending is used to create different database within Tableau and query them differently. it is perfect when you have aggregate data or data coming from different source. in most cases it works as a left join where the table were the first value is selected from is known as the primary table.
+* Join: join is a way of physically linking tables
+
+For this task, I will be using Relationship to join 4 of the tables because its the fairest and blend for the aggregate table because to aid proper analysis between the aggregate table and the other 4.
 
 ## CALCULATION OF MATRICES AND THEIR FORMULAS IN TABLEAU
 
@@ -401,7 +499,17 @@ There were three major points discussed at this meeting which were:
 * DAILY BOOKING RATE NIGHT (DBRN) _(Calculated Daily Booking Night Rate (DBRN))_: `[Calculated Total Bookings]/[Calculated Total No of Days]`
 * DAILY SELLABLE ROOM NIGHT (DSRN) _(Calculated Daily Sellable Room (DSRN))_: `[Calculated Total Capacity]/[Calculated Total No of Days]`
 * DAILY USABLE ROOM NIGHT (DURN) _(Calculated Daily Usable Room Night (DURN))_: `[Calculated Total Check-out]/[Calculated Total No of Days]`
-* WEEK OVER WEEK PERCENTAGE DIFFERECE _(Calculated week over week Revenue)_: `(SUM([Revenue Generated])-LOOKUP(SUM([Revenue Generated]),-1))/ABS(LOOKUP(SUM([Revenue Generated]),-1))`
+* WEEK OVER WEEK REVENU PERCENTAGE DIFFERECE _(Calculated week over week Revenue)_: `(SUM([Revenue Generated])-LOOKUP(SUM([Revenue Generated]),-1))/ABS(LOOKUP(SUM([Revenue Generated]),-1))`
 * WOW PERCENTAGE OCCUPANCY -(Calculated WoW change in % occupancy)_:
 * 
     
+
+## MAJOR CHALLENGES AND KEY LESSON  I GOT FROM THIS TASK
+
+* First Major challenge Calculation of week over week matrices was a bit difficult using sql because the week numbers didn't appear in the right order. interestingly I was able to figure my way around it after a long search using ROW_NUMBER function and a self join on the row numbers equating current row number to previous row number + 1.
+
+* Second Major challenge was figuring out why calculations from the aggregate table was giving me fixed value over week numbers. well after a long search I understood that using a relationship for an aggregate data was the wrong thing to do. so I had to use a blend. This challenge helped me understand how blend work. for example, 
+
+1) Fixed table calculation does not work in a case of blend when taking values from different tables. 
+2) For every sheet, you must establish the link between the two different data basees in othter to use them. 
+3) The tables in a blend are querried differently and it works as a left join. so to return all values from a desired table in the case of blending, you must select the desired value first from its table, thereby making it the primary table.

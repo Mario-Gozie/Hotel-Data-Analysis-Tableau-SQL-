@@ -55,52 +55,52 @@ There were three major points discussed at this meeting which were:
 
 `Select * from dim_date`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Viewing_Date_Table.png)
 
 ### VIEWING THE HOTEL TABLE
 
 `select * from dim_hotels`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Viewing_hotel_type_table.png)
 
 ### VIEWING THE ROOMS TABLE
 
 `select * from dim_rooms;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Viewing%20room%20type%20Table.png)
 
 ### VIEWING AGGREGATED BOOKINGS TABLE
 
 `select * from fact_aggregated_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/viewing_Agg_bookings_Table.png)
 
 ### VIEWING THE ACTUAL BOOKINGS TABLE
 
 `select * from fact_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Viewing_the_actual_booking_Table.png)
 
 ### TOTAL BOOKINGS
 
 `select count(booking_id) as Total_booking`
 `from fact_bookings`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_Bookings.png)
 
 ### TOTAL CAPACITY
 
 `select sum(capacity) as Total_Capacity`  
 `from fact_aggregated_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_Capacity.png)
 
 ### TOTAL SUCCESSFUL BOOKINGS
 
 `select sum(successful_bookings) as Total_Successful_Bookings`
 `from fact_aggregated_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_Successful_bookings.png)
 
 ### TOTAL OCCUPANCY (IN PERCENTAGE)
 
@@ -108,7 +108,7 @@ There were three major points discussed at this meeting which were:
 `as Total_Percentage_Occupancy`
 `from fact_aggregated_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_Percentage_Occupancy.png)
 
 ### AVERAGE RATING
 
@@ -116,7 +116,7 @@ There were three major points discussed at this meeting which were:
 `as Total_Average_Rating`
 `from fact_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_Average_Rating.png)
 
 ### NO OF DAYS
 
@@ -124,7 +124,7 @@ There were three major points discussed at this meeting which were:
 `as Total_No_of_Days`
 `from dim_date;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_No_of_Days.png)
 
 **_NB:_** I had to add 1 to the date difference function because the **DATEDIFF** function do not add the last day.
 
@@ -135,7 +135,7 @@ There were three major points discussed at this meeting which were:
 `from fact_bookings`
 `where booking_status = 'Cancelled';`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_Canceled_Bookings.png)
 
 ### PERCENTAGE OF CANCELLED BOOKINGS
 
@@ -149,7 +149,7 @@ There were three major points discussed at this meeting which were:
 `from agg_booking_status`
 `where booking_status = 'Cancelled';`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Percentage_Canceled_Bookings.png)
 
 ### TOTAL CHECK-OUT
 
@@ -158,7 +158,7 @@ There were three major points discussed at this meeting which were:
 `from fact_bookings`
 `where booking_status = 'Checked Out';`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_Checked_Out.png)
 
 ### TOTAL NO SHOW
 
@@ -167,7 +167,7 @@ There were three major points discussed at this meeting which were:
 `from fact_bookings`
 `where booking_status = 'No Show';`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_No_Show.png)
 
 ### PERCENTAGE OF NO SHOW
 
@@ -181,7 +181,7 @@ There were three major points discussed at this meeting which were:
 `from agg_booking_status`
 `where booking_status = 'No Show';`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Percentage_No_Show.png)
 
 ### PERCENTAGE BOOKINGS PER PLATFORM
 
@@ -196,7 +196,7 @@ There were three major points discussed at this meeting which were:
 `as Percentage_per_Platform`
 `from agg_booking_per_Platform;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Percentage_Booking_Per_Platform.png)
 
 ### REALIZATION PER PLATFORM
 
@@ -213,7 +213,7 @@ There were three major points discussed at this meeting which were:
 `select booking_platform, concat(round((checkout* 100/bookings),2),' %')`
 `as Total_Realization from check_out_and_bookings`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Realization%20per%20platform.png)
 
 ### ADR PER PLATFORM
 
@@ -221,7 +221,7 @@ There were three major points discussed at this meeting which were:
 `count(booking_id)),2),'c') as ADR from  fact_bookings`
 `group by booking_platform`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/ADR_per%20Platform.png)
 
 ### PERCENTAGE BOOKINGGS PER ROOM CLASS
 
@@ -237,7 +237,7 @@ There were three major points discussed at this meeting which were:
 `as room_booking_ratio`
 `from agg_room_count;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Percentage_Booking_Per_Room_Type.png)
 
 ### AVERAGE DAILY RATE
 
@@ -246,7 +246,7 @@ There were three major points discussed at this meeting which were:
 `select round(sum(revenue_realized)/count(booking_id),2)` 
 `as Average_Daily_Rate from fact_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/ADR.png)
 
 ### REALIZATION
 
@@ -262,7 +262,7 @@ There were three major points discussed at this meeting which were:
 `from agg_booking_status`
 `where booking_status = 'Checked Out';`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Realization_or_Percentage_Checked_out.png)
 
 ### REVENUE PER ROOM 
 

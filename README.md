@@ -271,7 +271,7 @@ There were three major points discussed at this meeting which were:
 `select round(sum(revenue_realized)/(select sum(capacity)`
 `from fact_aggregated_bookings),2) as RevPAR from fact_bookings`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Total_RevPAR.png)
 
 ### DAILY BOOKING RATE NIGHT 
 
@@ -282,7 +282,7 @@ There were three major points discussed at this meeting which were:
 `as Total_No_of_Days`
 `from dim_date),2) as DBRN from fact_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Daily_Booking_Rate_Night.png)
 
 ### DAILY SELLABLE RATE NIGHT
 
@@ -292,7 +292,7 @@ There were three major points discussed at this meeting which were:
 `as Total_No_of_Days`
 `from dim_date),2) as DSRN from fact_aggregated_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Daily_Sellable_Room_Night.png)
 
 ### DAILY USEABLE ROOM NIGHT (DURN)
 
@@ -305,7 +305,7 @@ There were three major points discussed at this meeting which were:
 `as Total_No_of_Days`
 `from dim_date) as DURN from fact_bookings;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Daily_Usable_Room_Night.png)
 
 ### WEEK OVER WEEK PERCENTAGE REVENUE CHANGE
 
@@ -320,7 +320,7 @@ There were three major points discussed at this meeting which were:
 `from week_over_week_cte as current_week join`
 `week_over_week_cte as previous_week on previous_week.row_num = current_week.row_num - 1;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/week%20over%20week%20Revenue.png)
 
 ### WEEK OVER WEEK OCCUPANCY PERCENTAGE CHANGE
 
@@ -336,7 +336,7 @@ There were three major points discussed at this meeting which were:
 `Over(order by week_no)) * 100/lag(WoW_Occupancy_Change)`
 `Over(order by week_no),2),' %') as WoW_change_of_Occupany from weekly_occupancy;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/week%20over%20week%20Occupancy.png)
 
 * Alternatively
 
@@ -354,7 +354,7 @@ There were three major points discussed at this meeting which were:
 `join Total_weekly_occupancy as previous_week` 
 `on current_week.row_num = previous_week.row_num + 1;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Alternative%20week%20over%20week%20occupancy.png)
 
 ### WEEK OVER WEEK ADR CHANGE
 
@@ -367,7 +367,7 @@ There were three major points discussed at this meeting which were:
 `select week_no, concat(round(((Total_ADR-lag(Total_ADR) over(order by week_no))*100/`
 `lag(Total_ADR) over(order by week_no)),2),' %') as WoW_ADR from agg_ADR;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Week%20over%20week%20Average%20Daily%20Rate.png)
 
 * Alternatively
 
@@ -383,7 +383,7 @@ There were three major points discussed at this meeting which were:
 `from agg_ADR as current_week`
 `join agg_ADR as previous_week on current_week.rownum = previous_week.rownum + 1;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Alternative%20Week%20over%20week%20Average%20Daily%20Rate.png)
 
 ### WEEK OVER WEEK REVENUE PER DAY (RevPAR)
 
@@ -409,7 +409,7 @@ There were three major points discussed at this meeting which were:
 `select weeks, concat(round((((current_RevPAR-Previous_revPAR)/`
 `Previous_Revpar)*100),2),' %') as WOW_REVPAR from current_and_Previous_week;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Week%20over%20Week%20RevPAR.png)
 
 ### WEEK OVER WEEK REALIZATION
 
@@ -435,7 +435,7 @@ There were three major points discussed at this meeting which were:
 `Total_weekly_realization as previous_week`
 `on current_week.row_num = previous_week.row_num + 1;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Week%20over%20week%20Realization.png)
 
 ### WEEK OVER WEEK DAILY SELLABLE ROOM NIGHT
 
@@ -463,7 +463,7 @@ There were three major points discussed at this meeting which were:
 `from Total_DSRN as current_week join`
 `Total_DSRN as previous_week on previous_week.Row_num = current_week.Row_num-1;`
 
-![Alt Text]()
+![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/week%20over%20week%20DSRN.png)
 
 ### THE TASK WITH TABLEU
 
@@ -474,6 +474,10 @@ To carry out this task with tableau, there is need to need to link the five (5) 
 * Join: join is a way of physically linking tables
 
 For this task, I will be using Relationship to join 4 of the tables because its the fairest and blend for the aggregate table because to aid proper analysis between the aggregate table and the other 4.
+
+|  Relationship                             |   Blending                                 |
+|------------------------------------------ | ------------------------------------------ |
+|    ![Alt Text]()                          |     ![Alt Text]()                                           |
 
 ## CALCULATION OF MATRICES AND THEIR FORMULAS IN TABLEAU
 

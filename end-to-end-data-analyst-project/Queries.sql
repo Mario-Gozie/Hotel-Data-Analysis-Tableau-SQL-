@@ -96,6 +96,29 @@ select booking_platform, concat(Round((booking_per_platform * 100)/
 as Percentage_per_Platform
 from agg_booking_per_Platform;
 
+-- Realization per platform
+
+with Total_check_out as (select booking_platform,cast(count(booking_status) as float)
+as checkout from fact_bookings
+where booking_status = 'Checked Out'
+group by booking_platform),
+
+check_out_and_bookings as (select a.booking_platform, checkout, count(booking_id) as bookings 
+from Total_check_out as a join fact_bookings as b on 
+b.booking_platform = a.booking_platform
+group by a.booking_platform, checkout)
+
+select booking_platform, concat(round((checkout* 100/bookings),2),' %') 
+as Total_Realization from check_out_and_bookings
+
+
+-- ADR per Platform
+
+select booking_platform, format(round((sum(revenue_realized)/
+count(booking_id)),2),'c') as ADR from  fact_bookings 
+group by booking_platform
+
+go
 -- Booking Percentage Per Room Class
 
 with agg_room_count as (select room_category, room_class, 
@@ -158,7 +181,6 @@ from dim_date) as DURN from fact_bookings;
 
 -- Week over Week Percentage Difference for Revenue
 go
-
 with week_over_week_cte as (select DATEPART(WEEK,check_in_date) as week_no, 
 sum(revenue_realized) as revenue, ROW_NUMBER() over(order by DATEPART(WEEK,check_in_date)) 
 as row_num from fact_bookings
@@ -225,46 +247,26 @@ join agg_ADR as previous_week on current_week.rownum = previous_week.rownum + 1;
 
 go
 -- WoW % RevPAR 
-with Total_RevPARS as(select DATEPART(WEEK,a.check_in_date) as week_no,
-sum(a.revenue_realized) /SUM(b.capacity) as Total_RevPAR,
-Row_number() over(order by DATEPART(WEEK,a.check_in_date)) as Row_num
-from fact_bookings as a 
-join fact_aggregated_bookings as b on a.check_in_date = b.check_in_date
-group by DATEPART(WEEK,a.check_in_date)),
 
-self_joined_table as (select a.week_no as Aweek_no, a.Row_num as ARow_no, 
-a.Total_RevPAR as ATotal_RevPAR, b.week_no as Bweek_no, b.Row_num as BRownum,
-b.Total_RevPAR as BTotal_RevPAR
-from Total_RevPARS as a join Total_RevPARS as b 
-on a.week_no = b.week_no and b.Row_num = a.row_num),
+with Total_Revenues as (select DATEPART(week, check_in_date) as weeks, sum(revenue_realized) as Total_rev 
+from fact_bookings
+group by DATEPART(week, check_in_date)),
 
-Current_and_Previous as (select Aweek_no, ATotal_RevPAR, 
-lag(BTotal_RevPAR) over(order by (select null)) as Previous
-from self_joined_table)
+caps_included as (select a.weeks, Total_rev, sum(capacity) as Total_capacity, 
+(Total_rev/sum(capacity)) as RevPar,
+ROW_NUMBER() over(order by weeks) as rownum
+from Total_Revenues as a
+join fact_aggregated_bookings as b on a.weeks = DATEPART(week, check_in_date)
+group by a.weeks,Total_rev),
 
-select Aweek_no, concat(round((((ATotal_RevPAR-Previous) *100)/
-Previous),2),' %') WOW_Revenue_Per_Available_Room from Current_and_Previous;
+current_and_Previous_week as (select current_week.weeks, current_week.Total_rev, current_week.Total_capacity, 
+current_week.RevPar as current_RevPAR, 
+previous_week.RevPAR as Previous_Revpar 
+from caps_included as current_week join 
+caps_included as previous_week on current_week.rownum = previous_week.rownum + 1)
 
-
--- Alternatively
-with Total_capacity_revenue as (select  DATEPART(WEEK,a.check_in_date) as week_no, 
-sum(b.revenue_realized) as Total_revenue,  
-sum(capacity) as Total_Capacity 
-from fact_aggregated_bookings as a 
-join fact_bookings as b on DATEPART(WEEK,a.check_in_date)=
-DATEPART(WEEK,b.check_in_date)
-group by DATEPART(WEEK,a.check_in_date)),
-
-Total_RevPAR as (select week_no, Total_revenue/Total_Capacity 
-as RevPAR, ROW_NUMBER() over(order by week_no) as Row_num 
-from Total_capacity_revenue)
-
-select current_week.week_no, current_week.RevPAR, Previous_week.RevPAR,
-concat(round((((current_week.RevPAR - Previous_week.RevPAR)*100)/
-Previous_week.RevPAR),2),' %') as Week_over_week_RevPAR 
-from Total_RevPAR as current_week
-join Total_RevPAR as Previous_week 
-on current_week.Row_num = Previous_week.Row_num + 1;
+select weeks, concat(round((((current_RevPAR-Previous_revPAR)/
+Previous_Revpar)*100),2),' %') as WOW_REVPAR from current_and_Previous_week;
 
 go
 -- WOW Realization
@@ -315,5 +317,6 @@ from Total_DSRN as current_week join
 Total_DSRN as previous_week on previous_week.Row_num = current_week.Row_num-1;
 
 
-select sum(revenue_realized) from fact_bookings
-select sum(capacity) from fact_aggregated_bookings
+
+go
+

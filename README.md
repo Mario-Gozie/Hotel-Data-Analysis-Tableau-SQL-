@@ -477,7 +477,7 @@ For this task, I will be using Relationship to join 4 of the tables because its 
 
 |  Relationship                             |   Blending                                 |
 |------------------------------------------ | ------------------------------------------ |
-|    ![Alt Text]()                          |     ![Alt Text]()                                           |
+|    ![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Better%20Relationship%20Tableau.png)                          |     ![Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Blending%20in%20Tableau.png)                                           |
 
 ## CALCULATION OF MATRICES AND THEIR FORMULAS IN TABLEAU
 

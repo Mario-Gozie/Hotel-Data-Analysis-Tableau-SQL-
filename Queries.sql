@@ -320,3 +320,262 @@ Total_DSRN as previous_week on previous_week.Row_num = current_week.Row_num-1;
 
 go
 
+-- For week over week Data
+
+with Total_bookings as (select DATEPART(week, check_in_date) as weeks,
+Min(Check_in_date) as week_start, Max(check_in_date) as week_end,
+(DATEDIFF(day, Min(Check_in_date), Max(check_in_date)) + 1) as weekdays,
+ sum(revenue_realized) as Total_revenue, 
+count(booking_id) as total_bookings
+from fact_bookings
+group by DATEPART(week, check_in_date)),
+
+Agg_table_Join as (select A.weeks, weekdays, Total_Revenue, total_bookings, 
+Total_successful_bookings, Total_capacity
+ from Total_bookings as A join
+(select DATEPART(week, check_in_date) weeks, 
+sum(successful_bookings) as Total_successful_bookings, 
+sum(capacity) as Total_capacity from fact_aggregated_bookings
+group by DATEPART(week, check_in_date)) as agg_of_agg on agg_of_agg.weeks = A.weeks)
+
+select weeks, Total_successful_bookings, weekdays, Total_revenue, Total_bookings,
+ Total_capacity,
+sum(Total_Revenue)/sum(total_bookings) as ADR, 
+sum(Total_Revenue)/sum(Total_Capacity) as  Total_RevPar,
+sum(Total_successful_bookings)/sum(Total_capacity) as Occupancy,
+ Total_Capacity/weekdays DSRN 
+from Agg_table_Join
+group by weeks, Total_successful_bookings, weekdays, Total_revenue, Total_bookings,
+ Total_capacity;
+
+ go
+ -- week over week calculation
+ with Total_bookings as (select DATEPART(week, check_in_date) as weeks,
+Min(Check_in_date) as week_start, Max(check_in_date) as week_end,
+(DATEDIFF(day, Min(Check_in_date), Max(check_in_date)) + 1) as weekdays,
+ sum(revenue_realized) as Total_revenue, 
+count(booking_id) as total_bookings
+from fact_bookings
+group by DATEPART(week, check_in_date)),
+
+Agg_table_Join as (select A.weeks, weekdays, Total_Revenue, total_bookings, 
+Total_successful_bookings, Total_capacity
+ from Total_bookings as A join
+(select DATEPART(week, check_in_date) weeks, 
+sum(successful_bookings) as Total_successful_bookings, 
+sum(capacity) as Total_capacity from fact_aggregated_bookings
+group by DATEPART(week, check_in_date)) as agg_of_agg on agg_of_agg.weeks = A.weeks),
+
+ week_over as (select weeks, Total_successful_bookings, weekdays, Total_revenue, Total_bookings,
+ Total_capacity,
+sum(Total_Revenue)/sum(total_bookings) as ADR, 
+sum(Total_Revenue)/sum(Total_Capacity) as  Total_RevPar,
+sum(Total_successful_bookings)/sum(Total_capacity) as Occupancy,
+ Total_Capacity/weekdays DSRN, ROW_NUMBER() over(order by weeks) as rowss
+from Agg_table_Join
+group by weeks, Total_successful_bookings, weekdays, Total_revenue, Total_bookings,
+ Total_capacity),
+
+ previous_and_current as (select current_week.weeks as weeks, current_week.Total_revenue as current_total_Revenue, 
+ previous_week.Total_revenue as previous_Total_Revenue, current_week.ADR as current_ADR, 
+ previous_week.ADR as Previous_ADR, current_week.Total_RevPar as current_RevPar, 
+ previous_week.Total_Revpar as Previous_Revpar, current_week.Occupancy as current_occupancy, 
+ previous_week.Occupancy as Previous_occupancy, current_week.DSRN as current_DSRN, 
+ previous_week.DSRN as Previous_DSRN from week_over as current_week
+ join week_over as previous_week on current_week.rowss = previous_week.rowss + 1)
+
+select weeks, (current_total_Revenue-previous_Total_Revenue)/previous_Total_Revenue as WoW_Revenue,
+(current_ADR -Previous_ADR)/Previous_ADR as WoW_ADR,
+(current_RevPar -Previous_Revpar)/Previous_Revpar as WoW_Revpar,
+(current_occupancy-Previous_occupancy)/Previous_occupancy as WoW_Occupancy,
+(current_DSRN-Previous_DSRN)/Previous_DSRN as WoW_DSRN
+from previous_and_current;
+
+-- week over week Realization
+ go
+ with Total_Checkout_table as (select DATEPART(WEEK,check_in_date) as week_no, 
+cast(count(booking_id) as float) as Total_Checkout, 
+(select count(booking_id) from fact_bookings) as Total_bookings
+from fact_bookings
+where booking_status = 'Checked Out'
+group by DATEPART(WEEK,check_in_date)),
+
+Total_weekly_realization as (select week_no, Total_Checkout/Total_bookings 
+as weekly_realization, 
+ROW_NUMBER() over(order by week_no) as row_num 
+from Total_Checkout_table)
+
+select current_week.week_no, current_week.weekly_realization, 
+previous_week.weekly_realization as Previous_week_realization,
+concat(round(((current_week.weekly_realization- previous_week.weekly_realization) *100/
+(previous_week.weekly_realization)),2),' %') as week_over_week_Realization
+from Total_weekly_realization as current_week join
+Total_weekly_realization as previous_week 
+on current_week.row_num = previous_week.row_num + 1;
+
+
+-- Aggregation on days
+
+go
+
+with First_agg_booking as (select cast(check_in_date as date) as weekdays,  DATEPART(week, check_in_date) as weeks,
+Min(Check_in_date) as week_start, Max(check_in_date) as week_end,
+(DATEDIFF(day, Min(Check_in_date), Max(check_in_date)) + 1) as No_of_days,
+ sum(revenue_realized) as Total_revenue, 
+count(booking_id) as total_bookings
+from fact_bookings
+group by DATEPART(week, check_in_date), cast (check_in_date as date)),
+
+Second_agg_booking as (select weekdays, weeks, No_of_days, Total_revenue, Total_Bookings, checked_out, cancelled, No_Show
+from First_agg_booking as A
+join (select check_in_date, sum(case when booking_status = 'Checked Out' then 1 else 0 End) as checked_out,
+sum(case when booking_status = 'Cancelled' then 1 else 0 End) as cancelled,
+sum(case when booking_status = 'No Show' then 1 else 0 End) as No_Show from fact_bookings
+group by check_in_date)  as B on A.weekdays = B.check_in_date)
+
+select weekdays, weeks, No_of_days, Total_revenue, Total_bookings, checked_out, cancelled, No_show, 
+successful_bookings, capacity from Second_agg_booking as C join (select check_in_date, sum(successful_bookings)
+as successful_bookings, sum(capacity) as capacity from 
+fact_aggregated_bookings
+group by check_in_date) as D
+on C.weekdays = D.check_in_date;
+
+
+
+go
+
+--Aggregation to week level
+
+with First_agg_booking as (select cast(check_in_date as date) as weekdays,  DATEPART(week, check_in_date) as weeks,
+Min(Check_in_date) as week_start, Max(check_in_date) as week_end,
+(DATEDIFF(day, Min(Check_in_date), Max(check_in_date)) + 1) as No_of_days,
+ sum(revenue_realized) as Total_revenue, 
+count(booking_id) as total_bookings
+from fact_bookings
+group by DATEPART(week, check_in_date), cast (check_in_date as date)),
+
+Second_agg_booking as (select weekdays, weeks, No_of_days, Total_revenue, Total_Bookings, checked_out, cancelled, No_Show
+from First_agg_booking as A
+join (select check_in_date, sum(case when booking_status = 'Checked Out' then 1 else 0 End) as checked_out,
+sum(case when booking_status = 'Cancelled' then 1 else 0 End) as cancelled,
+sum(case when booking_status = 'No Show' then 1 else 0 End) as No_Show from fact_bookings
+group by check_in_date)  as B on A.weekdays = B.check_in_date),
+
+agg_final as (select weekdays, weeks, No_of_days, Total_revenue, Total_bookings, checked_out, cancelled, No_show, 
+successful_bookings, capacity from Second_agg_booking as C join (select check_in_date, sum(successful_bookings)
+as successful_bookings, sum(capacity) as capacity from 
+fact_aggregated_bookings
+group by check_in_date) as D
+on C.weekdays = D.check_in_date),
+
+Matrixes_in_one_Table as (select weeks, sum(no_of_days) as No_of_Days, sum(Total_revenue) as Total_Revenue, sum(Total_bookings) as Total_Bookings, 
+sum(checked_out) as Total_checkout, 
+sum(cancelled) as Total_Cancelled, sum(No_Show) as Total_No_show, sum(successful_bookings) as successful_bookings, 
+sum(capacity) as Total_capacity from agg_final
+group by weeks)
+
+select weeks, No_of_Days, Total_Revenue, Total_Bookings, Total_checkout, Total_No_show, successful_bookings, Total_capacity,
+(successful_bookings/Total_capacity) as occupancy, (Total_Revenue/successful_bookings) as ADR, 
+(Total_Revenue/Total_capacity) as RevPar,(Total_capacity/No_of_Days) as DSRN, (Total_checkout/successful_bookings) as Realization
+from Matrixes_in_one_Table
+group by weeks, No_of_Days, Total_Revenue, Total_Bookings, Total_checkout, Total_No_show, successful_bookings, Total_capacity
+order by weeks
+
+-- Bringing it down to week over week calculation
+
+with First_agg_booking as (select cast(check_in_date as date) as weekdays,  DATEPART(week, check_in_date) as weeks,
+Min(Check_in_date) as week_start, Max(check_in_date) as week_end,
+(DATEDIFF(day, Min(Check_in_date), Max(check_in_date)) + 1) as No_of_days,
+ sum(revenue_realized) as Total_revenue, 
+count(booking_id) as total_bookings
+from fact_bookings
+group by DATEPART(week, check_in_date), cast (check_in_date as date)),
+
+Second_agg_booking as (select weekdays, weeks, No_of_days, Total_revenue, Total_Bookings, checked_out, cancelled, No_Show
+from First_agg_booking as A
+join (select check_in_date, sum(case when booking_status = 'Checked Out' then 1 else 0 End) as checked_out,
+sum(case when booking_status = 'Cancelled' then 1 else 0 End) as cancelled,
+sum(case when booking_status = 'No Show' then 1 else 0 End) as No_Show from fact_bookings
+group by check_in_date)  as B on A.weekdays = B.check_in_date),
+
+agg_final as (select weekdays, weeks, No_of_days, Total_revenue, Total_bookings, checked_out, cancelled, No_show, 
+successful_bookings, capacity from Second_agg_booking as C join (select check_in_date, sum(successful_bookings)
+as successful_bookings, sum(capacity) as capacity from 
+fact_aggregated_bookings
+group by check_in_date) as D
+on C.weekdays = D.check_in_date),
+
+Matrixes_in_one_Table as (select weeks, sum(no_of_days) as No_of_Days, sum(Total_revenue) as Total_Revenue, sum(Total_bookings) as Total_Bookings, 
+sum(checked_out) as Total_checkout, 
+sum(cancelled) as Total_Cancelled, sum(No_Show) as Total_No_show, sum(successful_bookings) as successful_bookings, 
+sum(capacity) as Total_capacity from agg_final
+group by weeks),
+
+Normal_Matrices as (select weeks, No_of_Days, Total_Revenue, Total_Bookings, Total_checkout, Total_No_show, successful_bookings, Total_capacity,
+(successful_bookings/Total_capacity) as occupancy, (Total_Revenue/successful_bookings) as ADR, 
+(Total_Revenue/Total_capacity) as RevPar, (Total_checkout/successful_bookings) as Realization, (Total_capacity/No_of_Days) as DSRN,
+ROW_NUMBER() over(order by weeks) as calc_rownum
+from Matrixes_in_one_Table
+group by weeks, No_of_Days, Total_Revenue, Total_Bookings, Total_checkout, Total_No_show, successful_bookings, Total_capacity),
+
+Previous_and_current_week as (select current_week.weeks, current_week.Total_Revenue as current_Revenue, previous_week.Total_Revenue as Previous_Revenue,
+current_week.Occupancy as current_Occupancy, previous_week.Occupancy as previous_occupancy, 
+current_week.ADR as current_ADR, previous_week.ADR as Previous_ADR, current_week.RevPar as current_Revpar, previous_week.RevPar as Previous_Revpar, 
+current_week.Realization as current_Realization, previous_week.Realization as Previous_Realization, current_week.DSRN as current_DSRN,
+previous_week.DSRN as Previous_DSRN from Normal_Matrices
+as current_week join Normal_Matrices as previous_week on current_week.weeks = previous_week.weeks + 1 )
+
+select weeks, (current_Revenue - Previous_Revenue)/Previous_Revenue  as WOW_Revenue,
+(current_Occupancy - previous_occupancy)/previous_occupancy  as WOW_Occupancy,
+(current_ADR - Previous_ADR)/Previous_ADR  as WOW_ADR,
+(current_Revpar - Previous_Revpar)/Previous_Revpar  as WOW_Revpar,
+(current_Realization - Previous_Realization)/Previous_Realization as WOW_Realization,
+(current_DSRN - Previous_DSRN)/Previous_DSRN  as WOW_DSRN
+from Previous_and_current_week
+order by weeks;
+
+go
+
+
+
+-- Hotel Detail Data
+
+with hotel_info_and_agg as (select A.property_id as Property_id, B.property_name as property_name,
+category as Hotel_category, room_category, B.city as city, check_in_date as check_in_date, successful_bookings, capacity
+from fact_aggregated_bookings as A
+Join dim_hotels as B on A.property_id = B.property_id),
+
+Hotel_and_room_category as (select check_in_date, property_id, property_name, city,  room_category, room_class, successful_bookings, capacity 
+from hotel_info_and_agg join dim_rooms as D on  room_id = room_category)
+
+select check_in_date, Property_id, property_name,city, room_category, room_class, successful_bookings, capacity
+from Hotel_and_room_category 
+
+
+
+
+go
+--- Aggregated for KPI
+
+go
+with for_KPI as (
+select distinct check_in_date, sum(revenue_realized) over(partition by check_in_date order by check_in_date) as revenue_realized,
+ sum(case when booking_status = 'Checked Out' then 1 else 0 End) over(partition by check_in_date order by check_in_date) as checked_out,
+sum(case when booking_status = 'Cancelled' then 1 else 0 End) over(partition by check_in_date order by check_in_date) as cancelled,
+sum(case when booking_status = 'No Show' then 1 else 0 End) over(partition by check_in_date order by check_in_date) as No_Show
+ from fact_bookings)
+
+
+select distinct A.check_in_date, checked_out, cancelled, No_show , Total_capacity, successful_bookings, revenue_realized from for_KPI as A Join 
+ (select distinct check_in_date,  sum(successful_bookings) as successful_bookings,
+ sum(capacity) as Total_capacity
+ from fact_aggregated_bookings group by check_in_date) as B on A.check_in_date = B.check_in_date;
+
+
+
+
+
+
+
+
+

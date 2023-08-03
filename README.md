@@ -495,7 +495,7 @@ There were three major points discussed at this meeting which were:
 `group by weeks, Total_successful_bookings, weekdays, Total_revenue, Total_bookings,`
  `Total_capacity;`
 
- [Alt Text]()
+ [Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Matrixes%20per%20week%20.png)
 
  * CALCULATING WEEK OVER WEEK REVENUE, ADR, REVPAR, OCCUPANCY, DSRN
 
@@ -540,7 +540,7 @@ There were three major points discussed at this meeting which were:
 `(current_DSRN-Previous_DSRN)/Previous_DSRN as WoW_Revenue`
 `from previous_and_current;`
 
-[Alt Text]()
+[Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/first%20week%20over%20week%20calculation%20.png)
 
 * CALCULATING WEEK OVER WEEK REALIZATION
 
@@ -564,7 +564,7 @@ There were three major points discussed at this meeting which were:
 `Total_weekly_realization as previous_week`
 `on current_week.row_num = previous_week.row_num + 1;`
 
-[Alt Text]()
+[Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/First%20week%20over%20week%20Realization%20.png)
 
 * AGGREGATION PER DAY FOR REVENUE, TOTAL BOOKINGS, CHECK OUTS, CANCELLED BOOKINGS, NO SHOW, CAPACITY.
 
@@ -591,7 +591,7 @@ There were three major points discussed at this meeting which were:
 `group by check_in_date) as D`
 `on C.weekdays = D.check_in_date;`
 
-[Alt text]()
+[Alt text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Aggregate%20per%20day%20successful%20booking%20and%20co.png)
 
 * AGGREGATED TABLE ON WEEK LEVEL TO CALCULATE TOTAL REVENUE, TOTAL BOOKINGS , TOTAL CHECK OUTS, TOTAL NO SHOW, TOTAL CAPACITY, OCCUPANCY, ADR, REVPAR, DSRN, REALIZAION.
 
@@ -623,8 +623,16 @@ There were three major points discussed at this meeting which were:
 `sum(capacity) as Total_capacity from agg_final`
 `group by weeks)`
 
+`select weeks, No_of_Days, Total_Revenue, Total_Bookings, Total_checkout, Total_No_show, successful_bookings, Total_capacity,`
+`(successful_bookings/Total_capacity) as occupancy, (Total_Revenue/successful_bookings) as ADR,`
+`(Total_Revenue/Total_capacity) as RevPar,(Total_capacity/No_of_Days) as DSRN, (Total_checkout/successful_bookings) as Realization`
+`from Matrixes_in_one_Table`
+`group by weeks, No_of_Days, Total_Revenue, Total_Bookings, Total_checkout, Total_No_show, successful_bookings, Total_capacity`
+`order by weeks`
 
-[Alt Text]()
+
+
+[Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Second%20Matrices%20Calculations.png)
 
 * CALCULATING THE WEEK OVER WEEK VALUES FOR THE MATRICES ABOVE (REVENUE, OCCUPANCY, ADR, REVPAR, REALIZATION, DSRN)
 
@@ -679,7 +687,7 @@ There were three major points discussed at this meeting which were:
 `from Previous_and_current_week`
 `order by weeks;`
 
-[Alt Text]()
+[Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Second%20week%20over%20week%20matrixes%20calculation%20.png)
 
 * AGGREGATING HOTEL DETAIL
 
@@ -694,7 +702,7 @@ There were three major points discussed at this meeting which were:
 `select check_in_date, Property_id, property_name,city, room_category, room_class, successful_bookings, capacity`
 `from Hotel_and_room_category`
 
-[Alt Text]()
+[Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Hotel%20Detail%20data%20.png)
 
 
 AGGREGATING TABLE TO MAKE CREATION OF KPI EASY IN TABLEAU
@@ -713,20 +721,7 @@ AGGREGATING TABLE TO MAKE CREATION OF KPI EASY IN TABLEAU
  `from fact_aggregated_bookings group by check_in_date) as B on A.check_in_date = B.check_in_date;`
 
 
-
-
-
-
-
-
-`select weeks, No_of_Days, Total_Revenue, Total_Bookings, Total_checkout, Total_No_show, successful_bookings, Total_capacity,`
-(successful_bookings/Total_capacity) as occupancy, (Total_Revenue/successful_bookings) as ADR,`
-(Total_Revenue/Total_capacity) as RevPar,(Total_capacity/No_of_Days) as DSRN, (Total_checkout/successful_bookings) as Realization`
-from Matrixes_in_one_Table`
-`group by weeks, No_of_Days, Total_Revenue, Total_Bookings, Total_checkout, Total_No_show, successful_bookings, Total_capacity`
-`order by weeks`
-
-
+[Alt Text](https://github.com/Mario-Gozie/Hotel-Data-Analysis-Tableau-SQL-/blob/main/Images/Aggregation%20for%20KPI.png)
 
 
 
